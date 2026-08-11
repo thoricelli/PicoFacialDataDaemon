@@ -10,9 +10,13 @@ To use this with VRCFaceTracking, download the module here: https://github.com/t
 2. Install via Magisk
 
 ### Standalone
+This step does not require root.
+
 1. Download the binary
-2. Push to the device
-3. Execute, it will automatically start as a daemon
+2. `adb push picofacialdatadaemon /data/local/tmp`
+3. `chmod +x picofacialdatadaemon`
+4. It will notify you what PID it started on.
+5. To kill it: `pkill -f picofacialdatadaemon`
 
 ## How this works
 Face and eye tracking is usually either:
