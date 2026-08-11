@@ -1,0 +1,8 @@
+[submodule "third_party/core"]
+	path = third_party/core
+	url = https://android.googlesource.com/platform/system/core
+	branch = android10-release
+[submodule "third_party/native"]
+	path = third_party/native
+	url = https://android.googlesource.com/platform/frameworks/native
+	branch = android10-release

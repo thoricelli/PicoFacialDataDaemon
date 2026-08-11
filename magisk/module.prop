@@ -1,0 +1,6 @@
+id=picofacialdatadaemon
+name=Pico Facial Data Daemon
+version=1.0.0
+versionCode=1
+author=thoricelli
+description=A daemon that exposes the eye and face tracking data to a UDP socket.

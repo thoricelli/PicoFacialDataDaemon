@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "include/**"
+      - "CMakeLists.txt"
+      - "Makefile"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "include/**"
+      - "CMakeLists.txt"
+      - "Makefile"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r21e
+
+      - name: Build with Make
+        run: make
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact
+          path: build/arm64-v8a/picofacialdatadaemon

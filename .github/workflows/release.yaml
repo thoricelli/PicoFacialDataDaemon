@@ -1,0 +1,51 @@
+name: Release
+permissions:
+  contents: write
+on:
+  push:
+    tags: ["v*"]
+    paths:
+      - "src/**"
+      - "include/**"
+      - "CMakeLists.txt"
+      - "Makefile"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r21e
+
+      - name: Build with Make
+        run: make
+
+      - name: ZIP Magisk module
+        run: |
+          mkdir -p magisk/system/bin
+          cp build/arm64-v8a/picofacialdatadaemon magisk/system/bin
+          cd magisk
+          zip -r ../picofacialdatadaemon-magisk-module.zip . *
+          cd ..
+
+      - name: Release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+          "build/arm64-v8a/picofacialdatadaemon" \
+          "picofacialdatadaemon-magisk-module.zip" \
+          --repo="$GITHUB_REPOSITORY" \
+          --title="${tag#v}" \
+          --generate-notes
