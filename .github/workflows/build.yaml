@@ -1,6 +1,7 @@
 name: Build
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
     paths:
@@ -32,9 +33,12 @@ jobs:
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r21e
+          add-to-path: true
 
       - name: Build with Make
         run: make
+        env:
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
 
       - name: Upload
         uses: actions/upload-artifact@v4
