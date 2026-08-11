@@ -15,8 +15,9 @@ This step does not require root.
 1. Download the binary
 2. `adb push picofacialdatadaemon /data/local/tmp`
 3. `chmod +x picofacialdatadaemon`
-4. It will notify you what PID it started on.
-5. To kill it: `pkill -f picofacialdatadaemon`
+4. `adb ./data/local/tmp/picofacialdatadaemon`
+5. It will notify you what PID it started on.
+6. To kill it: `pkill -f picofacialdatadaemon`
 
 ## How this works
 Face and eye tracking is usually either:
