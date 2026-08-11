@@ -40,12 +40,16 @@ private:
     void Ping();
     void WaitForStop();
 
+    void RegisterSigKillHandler();
+    static void SigKillHandler(int signalNumber);
+
     sockaddr_in Discover();
     void SetupClientSocket();
 
     int facialDataSocket;
-    bool connected;
+    std::atomic<bool> connected;
     std::atomic<bool> active;
+    std::atomic<bool> kill;
 
     std::atomic<bool> stopThreadRunning;
     std::condition_variable cv;

@@ -22,7 +22,7 @@ void FacialTrackingSocket::Listen()
         setsockopt(this->facialDataSocket, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
 
         connect(this->facialDataSocket, (struct sockaddr *)&client, sizeof(client));
-        this->connected = true;
+        this->connected.store(true);
 
         std::thread pingThread(&FacialTrackingSocket::Ping, this);
 
@@ -36,8 +36,10 @@ void FacialTrackingSocket::Listen()
 
         } while (this->connected && !this->active.load());
 
+        this->RegisterSigKillHandler();
+
         // The show is on! Poll is blocking and quits once the ping thread detects no reply anymore.
-        if (this->connected)
+        if (this->connected.load())
             this->Poll(std::chrono::milliseconds(10));
 
         this->facialTracking->Stop();
@@ -46,12 +48,15 @@ void FacialTrackingSocket::Listen()
             pingThread.join();
 
         close(this->facialDataSocket);
+
+        if (this->kill)
+            return;
     }
 }
 
 void FacialTrackingSocket::Poll(std::chrono::nanoseconds pollInterval)
 {
-    while (this->Send() && this->connected)
+    while (this->Send() && this->connected.load())
     {
         std::this_thread::sleep_for(pollInterval);
     }
@@ -59,7 +64,7 @@ void FacialTrackingSocket::Poll(std::chrono::nanoseconds pollInterval)
 
 void FacialTrackingSocket::Ping()
 {
-    while (this->connected)
+    while (this->connected.load())
     {
         bool pingReceived = false;
         for (int i = 0; i < 5; i++)
@@ -77,7 +82,7 @@ void FacialTrackingSocket::Ping()
                 }
                 else if (std::string_view(buffer, bytesRead) == DAEMON_STOP)
                 {
-                    this->connected = false;
+                    this->connected.store(false);
 
                     return;
                 }
@@ -88,7 +93,7 @@ void FacialTrackingSocket::Ping()
 
         if (!pingReceived)
         {
-            this->connected = false;
+            this->connected.store(false);
             return;
         }
 
@@ -142,7 +147,10 @@ bool FacialTrackingSocket::Send()
     this->facialTracking->GetFacialData(&faceTrackingData, &eyeTrackingData);
 
     if (faceTrackingData == nullptr || eyeTrackingData == nullptr)
+    {
+        this->active.store(false);
         return true;
+    }
 
     struct iovec iov[2];
     iov[0].iov_base = faceTrackingData;
@@ -204,4 +212,28 @@ sockaddr_in FacialTrackingSocket::Discover()
     close(sock);
 
     return sender_addr;
+}
+
+FacialTrackingSocket *instance = nullptr;
+
+void FacialTrackingSocket::RegisterSigKillHandler()
+{
+    instance = this;
+
+    struct sigaction sa{};
+    sa.sa_handler = &FacialTrackingSocket::SigKillHandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+
+    sigaction(SIGTERM, &sa, nullptr);
+    sigaction(SIGINT, &sa, nullptr);
+}
+
+void FacialTrackingSocket::SigKillHandler(int signalNumber)
+{
+    if ((signalNumber == SIGTERM || signalNumber == SIGINT) && instance != nullptr)
+    {
+        instance->connected.store(false);
+        instance->kill.store(true);
+    }
 }
