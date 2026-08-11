@@ -1,7 +1,7 @@
 # PicoFacialDataDaemon
 
 A daemon that exposes an UDP socket that provides eye and face tracking data.  
-To use this with VRCFaceTracking, download the module here: LINK
+To use this with VRCFaceTracking, download the module here: https://github.com/thoricelli/PicoFacialDataModule/releases
 
 ## Running
 
