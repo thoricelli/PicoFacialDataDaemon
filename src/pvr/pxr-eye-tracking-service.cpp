@@ -29,7 +29,7 @@ status_t PxrEyeTrackingService::SetTrackingMode(int mode)
     return reply.readInt32();
 }
 
-status_t PxrEyeTrackingService::GetTrackingDataSharedMemory(int type, void **memory)
+status_t PxrEyeTrackingService::GetTrackingDataSharedMemory(int type, int *fd, void **memory)
 {
     sp<IServiceManager> sm = defaultServiceManager();
     sp<IBinder> eyeTrackingBinder = sm->getService(String16(SERVICE));
@@ -72,12 +72,15 @@ status_t PxrEyeTrackingService::GetTrackingDataSharedMemory(int type, void **mem
     if (memorySize <= 0)
         return FAILED_TRANSACTION;
 
+    int fdSharedMemory = uniqueFd.get();
+    *fd = fdSharedMemory;
+
     void *sharedMemory = mmap(
         nullptr,
         memorySize,
         PROT_READ,
         MAP_SHARED,
-        uniqueFd.get(),
+        fdSharedMemory,
         0);
 
     if (sharedMemory == MAP_FAILED)

@@ -1,8 +1,13 @@
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
 #include "data-buffer.hpp"
 
-DataBuffer::DataBuffer(void *memory)
+DataBuffer::DataBuffer(void *memory, int fd)
 {
     this->memory = static_cast<std::byte *>(memory);
+    this->fd = fd;
 }
 
 void *DataBuffer::GetLatest()
@@ -19,4 +24,14 @@ void *DataBuffer::GetLatest()
     this->lastBufferReceived = header->writeIndex;
 
     return this->memory + header->dataOffset + (header->elementSize * (header->writeIndex));
+}
+
+void DataBuffer::Close()
+{
+    struct stat sb;
+    fstat(this->fd, &sb);
+
+    munmap(this->memory, sb.st_size);
+
+    close(this->fd);
 }

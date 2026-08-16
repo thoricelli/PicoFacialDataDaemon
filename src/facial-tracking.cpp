@@ -68,21 +68,29 @@ bool FacialTracking::Start()
     // If someone can figure out why the service listener isn't working, please send a PR... for now I have to resort to polling the shared memory...
     // status_t status = PxrEyeTrackingService::AddServiceListener(this->eyeTrackingServiceListener);
 
-    // Face tracking data buffer.
+    if (this->faceTrackingDataBuffer)
+        this->faceTrackingDataBuffer->Close();
+
+    if (this->eyeTrackingDataBuffer)
+        this->eyeTrackingDataBuffer->Close();
+
+    //  Face tracking data buffer.
     void *faceTrackingSharedMemory = nullptr;
-    status_t sharedMemoryStatus = PxrEyeTrackingService::GetTrackingDataSharedMemory(SHARED_MEMORY_FACE_TRACKING, &faceTrackingSharedMemory);
+    int faceTrackingDataBufferFd;
+    status_t sharedMemoryStatus = PxrEyeTrackingService::GetTrackingDataSharedMemory(SHARED_MEMORY_FACE_TRACKING, &faceTrackingDataBufferFd, &faceTrackingSharedMemory);
 
     if (sharedMemoryStatus != OK)
         return false;
 
     void *eyeTrackingSharedMemory = nullptr;
-    sharedMemoryStatus = PxrEyeTrackingService::GetTrackingDataSharedMemory(SHARED_MEMORY_EYE_TRACKING, &eyeTrackingSharedMemory);
+    int eyeTrackingDataBufferFd;
+    sharedMemoryStatus = PxrEyeTrackingService::GetTrackingDataSharedMemory(SHARED_MEMORY_EYE_TRACKING, &eyeTrackingDataBufferFd, &eyeTrackingSharedMemory);
 
     if (sharedMemoryStatus != OK)
         return false;
 
-    this->faceTrackingDataBuffer = new DataBuffer(faceTrackingSharedMemory);
-    this->eyeTrackingDataBuffer = new DataBuffer(eyeTrackingSharedMemory);
+    this->faceTrackingDataBuffer = new DataBuffer(faceTrackingSharedMemory, faceTrackingDataBufferFd);
+    this->eyeTrackingDataBuffer = new DataBuffer(eyeTrackingSharedMemory, eyeTrackingDataBufferFd);
 
     return true;
 }

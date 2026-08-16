@@ -19,13 +19,16 @@ struct DataBufferHeader
 class DataBuffer
 {
 public:
-    DataBuffer(void *memory);
+    DataBuffer(void *memory, int fd);
     /**
      * @returns The memory pointer to the latest written slot.
      */
     void *GetLatest();
+    void Close();
 
 private:
     std::byte *memory;
+    int fd;
+
     int lastBufferReceived = -1;
 };

@@ -56,7 +56,7 @@ public:
      * Note: does not seem to work.
      */
     static status_t AddServiceListener(sp<IBinder> binder);
-    static status_t GetTrackingDataSharedMemory(int type, void **memory);
+    static status_t GetTrackingDataSharedMemory(int type, int *fd, void **memory);
     static status_t StartAlgorithm(int camera, int parameters, int timeoutMs);
     static status_t StopAlgorithm(int camera, int parameters);
 };

@@ -17,7 +17,7 @@ build:
 	@cmake -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Release
 	@cmake --build $(BUILD_DIR) --clean-first
 
-debug:
+debug: config
 	@echo "Building debug binary."
 	@cmake -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Debug
 	@cmake --build $(BUILD_DIR) --clean-first
