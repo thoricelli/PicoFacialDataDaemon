@@ -3,7 +3,7 @@ ABI       ?= arm64-v8a
 API_LEVEL ?= 29
 BUILD_DIR  = build/$(ABI)
 
-.PHONY: all config build typescript clean
+.PHONY: all config build clean
 
 all: config build
 

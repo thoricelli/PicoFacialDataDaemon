@@ -20,8 +20,6 @@ typedef struct
 
 typedef struct
 {
-    int64_t timestamp;
-
     int32_t leftEyePoseStatus;     //!< Bit field (pvrEyePoseStatus) indicating left eye pose status
     int32_t rightEyePoseStatus;    //!< Bit field (pvrEyePoseStatus) indicating right eye pose status
     int32_t combinedEyePoseStatus; //!< Bit field (pvrEyePoseStatus) indicating combined eye pose status
@@ -40,10 +38,32 @@ typedef struct
     float leftEyePupilDilation;  //!< Left eye value in millimeters indicating the pupil dilation
     float rightEyePupilDilation; //!< Right eye value in millimeters indicating the pupil dilation
 
-    float leftEyePositionGuide[3];     //!< Position of the inner corner of the left eye in meters from the HMD center-eye coordinate system's origin.
-    float rightEyePositionGuide[3];    //!< Position of the inner corner of the right eye in meters from the HMD center-eye coordinate system's origin.
-    float foveatedGazeDirection[3];    //!< Position of the gaze direction in meters from the HMD center-eye coordinate system's origin.
-    int32_t foveatedGazeTrackingState; //!< The current state of the foveatedGazeDirection signal.
+    float leftEyePositionGuide[3];      //!< Position of the inner corner of the left eye in meters from the HMD center-eye coordinate system's origin.
+    float rightEyePositionGuide[3];     //!< Position of the inner corner of the right eye in meters from the HMD center-eye coordinate system's origin.
+    float foveatedGazeDirection[3];     //!< Position of the gaze direction in meters from the HMD center-eye coordinate system's origin.
+    uint32_t foveatedGazeTrackingState; //!< The current state of the foveatedGazeDirection signal.
+
+    uint32_t unknown;
+
+    uint32_t alwaysFourHundred;
+    uint32_t alwaysFourHundred2;
+
+    uint32_t unknown2;
+    uint32_t unknown3;
+    uint32_t unknown4;
+    uint32_t unknown5;
+
+    uint32_t timestamp;
+    uint32_t pupilState;
+
+    float LeftEyePupilPositionX;
+    float LeftEyePupilPositionY;
+
+    float RightEyePupilPositionX;
+    float RightEyePupilPositionY;
+
+    uint32_t unknown8;
+    uint32_t unknown9;
 
 } pxr_eyepose_data_v2_0;
 
@@ -51,7 +71,9 @@ enum DataSharedMemorySlot
 {
     SHARED_MEMORY_EYE_TRACKING_OLD = 1,
     SHARED_MEMORY_EYE_TRACKING,
-    SHARED_MEMORY_FACE_TRACKING
+    SHARED_MEMORY_FACE_TRACKING,
+    SHARED_MEMORY_UNKN,
+    SHARED_MEMORY_UNK2 // Lipsync blendshapes?
 };
 
 class FacialTracking
