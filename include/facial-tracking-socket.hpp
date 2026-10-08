@@ -27,7 +27,11 @@
 class FacialTrackingSocket
 {
 public:
-    FacialTrackingSocket();
+    /**
+     * @param allowedClient Only accept discovery requests from this IPv4 address, in network byte order.
+     * INADDR_ANY accepts a discovery request from any address.
+     */
+    explicit FacialTrackingSocket(in_addr_t allowedClient = INADDR_ANY);
     void Listen();
 
 private:
@@ -43,15 +47,20 @@ private:
     void RegisterSigKillHandler();
     static void SigKillHandler(int signalNumber);
 
-    sockaddr_in Discover();
+    /**
+     * Waits for a discovery request from an allowed client and stores its address in client.
+     * Returns false if no client was found because the daemon is stopping or the socket failed.
+     */
+    bool Discover(sockaddr_in *client);
     void SetupClientSocket();
 
+    in_addr_t allowedClient;
     int facialDataSocket;
-    std::atomic<bool> connected;
-    std::atomic<bool> active;
-    std::atomic<bool> kill;
+    std::atomic<bool> connected{false};
+    std::atomic<bool> active{false};
+    std::atomic<bool> kill{false};
 
-    std::atomic<bool> stopThreadRunning;
+    std::atomic<bool> stopThreadRunning{false};
     std::condition_variable cv;
     std::mutex cvMutex;
 
