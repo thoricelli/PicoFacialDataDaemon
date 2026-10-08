@@ -1,9 +1,14 @@
+#include <cerrno>
+#include <cstring>
+#include <string_view>
 #include <thread>
 
+#include "log.hpp"
 #include "facial-tracking-socket.hpp"
 
-FacialTrackingSocket::FacialTrackingSocket()
+FacialTrackingSocket::FacialTrackingSocket(in_addr_t allowedClient)
 {
+    this->allowedClient = allowedClient;
     this->facialTracking = new FacialTracking();
 }
 
@@ -12,7 +17,9 @@ void FacialTrackingSocket::Listen()
     while (true)
     {
         // Discover the client from the multicast broadcast.
-        sockaddr_in client = this->Discover();
+        sockaddr_in client{};
+        if (!this->Discover(&client))
+            return;
 
         this->facialDataSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -172,7 +179,18 @@ bool FacialTrackingSocket::Send()
     return true;
 }
 
-sockaddr_in FacialTrackingSocket::Discover()
+// Matches DISCOVER_PING, with or without a trailing NUL byte.
+static bool IsDiscoverRequest(const char *buffer, ssize_t length)
+{
+    std::string_view payload(buffer, length);
+
+    if (!payload.empty() && payload.back() == '\0')
+        payload.remove_suffix(1);
+
+    return payload == DISCOVER_PING;
+}
+
+bool FacialTrackingSocket::Discover(sockaddr_in *client)
 {
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -193,25 +211,58 @@ sockaddr_in FacialTrackingSocket::Discover()
 
     setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group));
 
-    char buffer[sizeof(DISCOVER_PING)];
-    sockaddr_in sender_addr{};
-    socklen_t sender_len = sizeof(sender_addr);
+    bool discovered = false;
 
-    long bytesReceived = recvfrom(
-        sock,
-        buffer,
-        sizeof(buffer) - 1,
-        0,
-        (struct sockaddr *)&sender_addr,
-        &sender_len);
+    // Any device on the network can send to this port, so only a discovery request from an allowed client is accepted.
+    while (!this->kill.load())
+    {
+        char buffer[64];
+        sockaddr_in sender_addr{};
+        socklen_t sender_len = sizeof(sender_addr);
 
-    char sender_ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &sender_addr.sin_addr, sender_ip, sizeof(sender_ip));
+        ssize_t bytesReceived = recvfrom(
+            sock,
+            buffer,
+            sizeof(buffer),
+            0,
+            (struct sockaddr *)&sender_addr,
+            &sender_len);
+
+        if (bytesReceived < 0)
+        {
+            // SIGTERM / SIGINT interrupt the receive, the loop condition then stops the discovery.
+            if (errno == EINTR)
+                continue;
+
+            LOGE("Discovery receive failed: %s", strerror(errno));
+            break;
+        }
+
+        char sender_ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &sender_addr.sin_addr, sender_ip, sizeof(sender_ip));
+
+        if (!IsDiscoverRequest(buffer, bytesReceived))
+        {
+            LOGI("Ignored a packet from %s, it is not a discovery request.", sender_ip);
+            continue;
+        }
+
+        if (this->allowedClient != INADDR_ANY && sender_addr.sin_addr.s_addr != this->allowedClient)
+        {
+            LOGI("Ignored a discovery request from %s, it is not the allowed client.", sender_ip);
+            continue;
+        }
+
+        LOGI("Discovered client %s.", sender_ip);
+        *client = sender_addr;
+        discovered = true;
+        break;
+    }
 
     setsockopt(sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&group, sizeof(group));
     close(sock);
 
-    return sender_addr;
+    return discovered;
 }
 
 FacialTrackingSocket *instance = nullptr;

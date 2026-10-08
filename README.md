@@ -15,9 +15,14 @@ This step does not require root.
 1. Download the binary
 2. `adb push picofacialdatadaemon /data/local/tmp`
 3. `adb shell chmod +x /data/local/tmp/picofacialdatadaemon`
-4. `adb shell ./data/local/tmp/picofacialdatadaemon`
+4. `adb shell ./data/local/tmp/picofacialdatadaemon --client <IP of your PC>`
 5. It will notify you what PID it started on.
 6. To kill it: `pkill -f picofacialdatadaemon`
+
+### Restricting the client
+Without `--client`, any device on the network that sends `DISCOVER_DAEMON` to the headset receives the eye and face tracking data.  
+With `--client <IPv4 address>`, the daemon ignores discovery requests from every other address, so only that PC can start the tracking and receive the data.  
+Use the address your PC has on the headset's network.
 
 ## How this works
 Face and eye tracking is usually either:
@@ -32,7 +37,7 @@ This transaction returns a file descriptor which can be mapped to use as shared 
 
 On startup:
 1. The daemon waits for a discovery request on the multicast group: `239.255.255.250` with port `9030`.
-2. Once it receives `DISCOVER_DAEMON`, the daemon will call the `pxreyetrackingservice` and start the tracking algorithm.
+2. Once it receives `DISCOVER_DAEMON` from the allowed client (any client without `--client`), the daemon will call the `pxreyetrackingservice` and start the tracking algorithm. Other packets are ignored.
 3. If the device is asleep, it polls until starting the algorithm succeeds.
 4. Once established it will start sending eye and face tracking data to the client that sent the discovery request, via UDP on port `9030`.  
 The polling interval is 10hz, the rate that the tracking service sends data back is 25hz.
